@@ -4,9 +4,13 @@ import java.awt.event.ActionListener;
 import java.awt.geom.Point2D;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.Inet4Address;
 import java.net.InetAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Collections;
+import java.util.Enumeration;
 
 import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
@@ -53,7 +57,7 @@ public class Server_MultiSnake extends JFrame implements ActionListener {
 	public Server_MultiSnake (int n) {
 		super("Server - MultiSnake v3.5");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setSize(500, 300);
+		setSize(500, 320);
 		setResizable(false);
 		setLayout(null);
 		
@@ -89,8 +93,8 @@ public class Server_MultiSnake extends JFrame implements ActionListener {
 		});
 		pause.setSize(110, 110);
 		restart.setSize(110, 110);
-		pause.setLocation(93, 120);
-		restart.setLocation(297, 120);
+		pause.setLocation(93, 150);
+		restart.setLocation(297, 150);
 		pause.setEnabled(false);
 		restart.setEnabled(false);
 		pause.setIcon(new ImageIcon("img/play_stop.png"));
@@ -101,8 +105,8 @@ public class Server_MultiSnake extends JFrame implements ActionListener {
 		restart.setBorder(BorderFactory.createRaisedBevelBorder());
 		
 		disp= new JLabel();
-		disp.setSize(300, 50);
-		disp.setLocation(100, 40);
+		disp.setSize(400, 100);
+		disp.setLocation(50, 20);
 		disp.setHorizontalAlignment(SwingConstants.CENTER);
 		disp.setBorder(BorderFactory.createRaisedBevelBorder());
 		disp.setOpaque(true);
@@ -127,11 +131,27 @@ public class Server_MultiSnake extends JFrame implements ActionListener {
 	public void getEveryBodyConnected() {
 		try {
 			server= new ServerSocket(6789, 20);
-			String s= "Hosted on "+InetAddress.getLocalHost().getHostAddress();
+			
+			String connectionInfo = "Connect to:<br>";
+			Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+	        for (NetworkInterface netint : Collections.list(nets)) {
+	            Enumeration<InetAddress> inetAddresses = netint.getInetAddresses();
+    	        if (inetAddresses.hasMoreElements()) {
+    	            String adress = "";
+    	            for (InetAddress inetAddress : Collections.list(inetAddresses)) {
+    	                if (inetAddress instanceof Inet4Address)
+    	                    adress = inetAddress.getHostAddress();
+                    }
+    	            if (!adress.equals("")) {
+    	                connectionInfo += String.format("%s: [%s]<br>", netint.getDisplayName(), adress);
+    	            }
+    	        }
+	        }
+			
 			Socket connection;
 			outs= new ObjectOutputStream[NbrPlayers];
 			for (int i= 0; i<NbrPlayers; i++) {
-				disp.setText(String.format("<html>%s<br>Waiting for %d person(s) to connect</html>", s, NbrPlayers-i));
+				disp.setText(String.format("<html>%s<br>Waiting for %d person(s) to connect</html>", connectionInfo, NbrPlayers-i));
 				repaint();
 				connection= server.accept();
 				outs[i]= new ObjectOutputStream(connection.getOutputStream());
@@ -146,7 +166,6 @@ public class Server_MultiSnake extends JFrame implements ActionListener {
 			restart.setEnabled(true);
 		} catch (Exception e) {
 			disp.setText("Erreur, fermez toutes les applis java puis relancer");
-			System.out.println("idk wtf");
 			e.printStackTrace();
 		}
 	}
